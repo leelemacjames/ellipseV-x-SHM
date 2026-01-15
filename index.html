@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHM: Velocity vs Displacement Ellipse</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #667eea;
+            margin-top: 30px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .equation {
+            text-align: center;
+            font-size: 1.3em;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            font-style: italic;
+        }
+        .preamble {
+            background: #fff3cd;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #ffc107;
+        }
+        .preamble h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .comparison-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .formula-box {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+        .highlight-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .canvas-container {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .control-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .value-display {
+            text-align: center;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .derivation {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            line-height: 1.8;
+        }
+        .derivation .step {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .derivation .step-number {
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 10px;
+        }
+        .math {
+            font-family: 'Courier New', monospace;
+            background: #f0f4ff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 1.05em;
+        }
+        .axis-diagram {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Harmonic Motion: Phase Space Ellipse</h1>
+        
+        <div class="preamble">
+            <h3>Circle vs Ellipse: Understanding the Phase Space</h3>
+            
+            <p><strong>A circle is a special case of an ellipse</strong> where both axes are equal. In the general case, an ellipse has two distinct semi-axes:</p>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Shape</th>
+                    <th>Standard Equation</th>
+                    <th>Semi-axes</th>
+                    <th>Condition</th>
+                </tr>
+                <tr>
+                    <td><strong>Circle</strong></td>
+                    <td>x² + y² = r²</td>
+                    <td>Both equal to r</td>
+                    <td>a = b = r</td>
+                </tr>
+                <tr>
+                    <td><strong>Ellipse</strong></td>
+                    <td>(x/a)² + (y/b)² = 1</td>
+                    <td>Horizontal: a, Vertical: b</td>
+                    <td>a ≠ b</td>
+                </tr>
+            </table>
+
+            <div class="highlight-box">
+                <strong>For SHM Phase Space:</strong>
+                <div class="formula-box">
+                    (x/A)² + (v/ωA)² = 1
+                </div>
+                <p style="margin-top: 15px;">Comparing with the standard ellipse equation (x/a)² + (y/b)² = 1:</p>
+            </div>
+
+            <div class="axis-diagram">
+                <h4 style="color: #667eea; margin-top: 0;">Semi-Axes Identification</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;">
+                    <div>
+                        <strong style="color: #dc3545;">Horizontal Semi-axis (x-direction):</strong>
+                        <div class="formula-box" style="margin-top: 10px;">
+                            a = A
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.95em;">This represents the maximum displacement</p>
+                    </div>
+                    <div>
+                        <strong style="color: #007bff;">Vertical Semi-axis (v-direction):</strong>
+                        <div class="formula-box" style="margin-top: 10px;">
+                            b = ωA
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.95em;">This represents the maximum velocity</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+                    <strong>Major vs Minor Axis:</strong>
+                    <ul style="text-align: left; margin: 10px 0;">
+                        <li>If <strong>ω > 1</strong>: Then ωA > A, so <strong>b > a</strong> → Vertical major axis (taller ellipse)</li>
+                        <li>If <strong>ω = 1</strong>: Then ωA = A, so <strong>b = a</strong> → Circle!</li>
+                        <li>If <strong>ω < 1</strong>: Then ωA < A, so <strong>b < a</strong> → Horizontal major axis (wider ellipse)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p><strong>Physical meaning:</strong> The angular frequency ω determines the "aspect ratio" of the ellipse. Higher ω means faster oscillation, which results in higher velocities for the same amplitude, stretching the ellipse vertically.</p>
+        </div>
+
+        <div class="equation">
+            v² = ω²(A² - x²)  ⟹  Ellipse: (x/A)² + (v/ωA)² = 1
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="phaseCanvas" width="500" height="500"></canvas>
+            <canvas id="animationCanvas" width="500" height="500"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Amplitude A (m): <span class="value-display" id="ampValue">2.0</span></label>
+                <input type="range" id="amplitude" min="0.5" max="3" step="0.1" value="2">
+            </div>
+            <div class="control-group">
+                <label>Angular Frequency ω (rad/s): <span class="value-display" id="omegaValue">2.0</span></label>
+                <input type="range" id="omega" min="0.5" max="4" step="0.1" value="2">
+                <p style="font-size: 0.85em; margin-top: 10px; color: #666;">
+                    Current: <span id="axisStatus">ω > 1, vertical major axis</span>
+                </p>
+            </div>
+            <div class="control-group">
+                <label>Initial Phase φ₀ (rad): <span class="value-display" id="phaseValue">0.0</span></label>
+                <input type="range" id="phase" min="0" max="6.28" step="0.1" value="0">
+            </div>
+        </div>
+
+        <button id="playPause">Pause</button>
+
+        <div class="info">
+            <strong>Key Points:</strong>
+            <ul>
+                <li>Left plot: Phase space showing v vs x trajectory (ellipse)</li>
+                <li>Right plot: Time evolution with oscillator animation</li>
+                <li>Semi-axes: a = A (horizontal), b = ωA (vertical)</li>
+                <li>Try setting ω = 1 to see a circular phase space!</li>
+                <li>Energy conservation: Total energy = ½m(v² + ω²x²) = constant</li>
+            </ul>
+        </div>
+
+        <h2>Mathematical Derivation</h2>
+        <div class="derivation">
+            <p>Starting from the displacement equation for simple harmonic motion:</p>
+            
+            <div class="step">
+                <span class="step-number">Step 1:</span>
+                <span class="math">x = A sin(ωt + φ₀)</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Step 2:</span>
+                Differentiate with respect to time to find velocity:
+                <br><span class="math">v = dx/dt = Aω cos(ωt + φ₀)</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Step 3:</span>
+                Square both equations:
+                <br><span class="math">x² = A² sin²(ωt + φ₀)</span>
+                <br><span class="math">v² = A²ω² cos²(ωt + φ₀)</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Step 4:</span>
+                Rearrange the displacement equation:
+                <br><span class="math">sin²(ωt + φ₀) = x²/A²</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Step 5:</span>
+                Rearrange the velocity equation:
+                <br><span class="math">cos²(ωt + φ₀) = v²/(ω²A²)</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Step 6:</span>
+                Apply the Pythagorean identity: <span class="math">sin²θ + cos²θ = 1</span>
+                <br><span class="math">x²/A² + v²/(ω²A²) = 1</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Step 7:</span>
+                Multiply through by <span class="math">ω²A²</span>:
+                <br><span class="math">ω²x² + v² = ω²A²</span>
+            </div>
+
+            <div class="step">
+                <span class="step-number">Final Result:</span>
+                Rearrange to get the velocity-displacement relationship:
+                <br><span class="math">v² = ω²(A² - x²)</span>
+                <br><br>
+                This is the equation of an ellipse in the phase space (x, v) with:
+                <br>• Semi-axis along x: <span class="math">a = A</span> (maximum displacement)
+                <br>• Semi-axis along v: <span class="math">b = ωA</span> (maximum velocity)
+                <br><br>
+                Standard ellipse form: <span class="math">(x/A)² + (v/ωA)² = 1</span>
+            </div>
+
+            <p style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 5px;">
+                <strong>Physical Interpretation:</strong> The ellipse represents conservation of energy. As the oscillator moves, kinetic energy (½mv²) and potential energy (½mω²x²) interchange while their sum remains constant. Each point on the ellipse corresponds to a specific energy distribution between kinetic and potential forms.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const phaseCanvas = document.getElementById('phaseCanvas');
+        const animCanvas = document.getElementById('animationCanvas');
+        const phaseCtx = phaseCanvas.getContext('2d');
+        const animCtx = animCanvas.getContext('2d');
+
+        let A = 2.0;
+        let omega = 2.0;
+        let phi0 = 0.0;
+        let t = 0;
+        let isPlaying = true;
+        const trail = [];
+
+        function updateAxisStatus() {
+            const statusEl = document.getElementById('axisStatus');
+            const ratio = omega;
+            if (Math.abs(ratio - 1) < 0.1) {
+                statusEl.textContent = 'ω ≈ 1, nearly circular!';
+                statusEl.style.color = '#28a745';
+            } else if (ratio > 1) {
+                statusEl.textContent = `ω > 1 (${ratio.toFixed(1)}), vertical major axis`;
+                statusEl.style.color = '#007bff';
+            } else {
+                statusEl.textContent = `ω < 1 (${ratio.toFixed(1)}), horizontal major axis`;
+                statusEl.style.color = '#dc3545';
+            }
+        }
+
+        document.getElementById('amplitude').addEventListener('input', (e) => {
+            A = parseFloat(e.target.value);
+            document.getElementById('ampValue').textContent = A.toFixed(1);
+            trail.length = 0;
+            updateAxisStatus();
+        });
+
+        document.getElementById('omega').addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value);
+            document.getElementById('omegaValue').textContent = omega.toFixed(1);
+            trail.length = 0;
+            updateAxisStatus();
+        });
+
+        document.getElementById('phase').addEventListener('input', (e) => {
+            phi0 = parseFloat(e.target.value);
+            document.getElementById('phaseValue').textContent = phi0.toFixed(2);
+            trail.length = 0;
+        });
+
+        document.getElementById('playPause').addEventListener('click', (e) => {
+            isPlaying = !isPlaying;
+            e.target.textContent = isPlaying ? 'Pause' : 'Play';
+        });
+
+        function drawPhaseSpace() {
+            const w = phaseCanvas.width;
+            const h = phaseCanvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const scale = 120;
+
+            phaseCtx.clearRect(0, 0, w, h);
+
+            // Grid
+            phaseCtx.strokeStyle = '#e0e0e0';
+            phaseCtx.lineWidth = 1;
+            for (let i = -5; i <= 5; i++) {
+                phaseCtx.beginPath();
+                phaseCtx.moveTo(cx + i * scale/3, 0);
+                phaseCtx.lineTo(cx + i * scale/3, h);
+                phaseCtx.stroke();
+                phaseCtx.beginPath();
+                phaseCtx.moveTo(0, cy + i * scale/3);
+                phaseCtx.lineTo(w, cy + i * scale/3);
+                phaseCtx.stroke();
+            }
+
+            // Axes
+            phaseCtx.strokeStyle = '#333';
+            phaseCtx.lineWidth = 2;
+            phaseCtx.beginPath();
+            phaseCtx.moveTo(0, cy);
+            phaseCtx.lineTo(w, cy);
+            phaseCtx.moveTo(cx, 0);
+            phaseCtx.lineTo(cx, h);
+            phaseCtx.stroke();
+
+            // Axis tick marks and labels
+            phaseCtx.fillStyle = '#666';
+            phaseCtx.font = '12px Arial';
+            for (let i = -2; i <= 2; i++) {
+                if (i !== 0) {
+                    phaseCtx.fillText(i.toString(), cx + i * scale/3 - 5, cy + 20);
+                    phaseCtx.fillText(i.toString(), cx + 10, cy - i * scale/3 + 5);
+                }
+            }
+
+            // Labels
+            phaseCtx.fillStyle = '#333';
+            phaseCtx.font = '16px Arial';
+            phaseCtx.fillText('x (m)', w - 50, cy - 10);
+            phaseCtx.fillText('v (m/s)', cx + 10, 25);
+
+            // Draw semi-axis indicators
+            phaseCtx.setLineDash([5, 5]);
+            phaseCtx.strokeStyle = '#dc3545';
+            phaseCtx.lineWidth = 2;
+            phaseCtx.beginPath();
+            phaseCtx.moveTo(cx, cy);
+            phaseCtx.lineTo(cx + A * scale/3, cy);
+            phaseCtx.stroke();
+            
+            phaseCtx.strokeStyle = '#007bff';
+            phaseCtx.beginPath();
+            phaseCtx.moveTo(cx, cy);
+            phaseCtx.lineTo(cx, cy - omega * A * scale/3);
+            phaseCtx.stroke();
+            phaseCtx.setLineDash([]);
+
+            // Labels for semi-axes
+            phaseCtx.fillStyle = '#dc3545';
+            phaseCtx.font = 'bold 14px Arial';
+            phaseCtx.fillText(`a = ${A.toFixed(1)}`, cx + A * scale/6, cy + 25);
+            phaseCtx.fillStyle = '#007bff';
+            phaseCtx.fillText(`b = ${(omega * A).toFixed(1)}`, cx + 15, cy - omega * A * scale/6);
+
+            // Draw ellipse
+            phaseCtx.strokeStyle = '#667eea';
+            phaseCtx.lineWidth = 3;
+            phaseCtx.beginPath();
+            for (let angle = 0; angle <= 2 * Math.PI; angle += 0.01) {
+                const x = A * Math.sin(angle);
+                const v = omega * A * Math.cos(angle);
+                const px = cx + x * scale/3;
+                const py = cy - v * scale/3;
+                if (angle === 0) phaseCtx.moveTo(px, py);
+                else phaseCtx.lineTo(px, py);
+            }
+            phaseCtx.closePath();
+            phaseCtx.stroke();
+
+            // Current position
+            const x = A * Math.sin(omega * t + phi0);
+            const v = omega * A * Math.cos(omega * t + phi0);
+            
+            // Trail
+            trail.push({x, v});
+            if (trail.length > 150) trail.shift();
+            
+            phaseCtx.strokeStyle = 'rgba(255, 99, 71, 0.5)';
+            phaseCtx.lineWidth = 2;
+            phaseCtx.beginPath();
+            for (let i = 0; i < trail.length; i++) {
+                const px = cx + trail[i].x * scale/3;
+                const py = cy - trail[i].v * scale/3;
+                if (i === 0) phaseCtx.moveTo(px, py);
+                else phaseCtx.lineTo(px, py);
+            }
+            phaseCtx.stroke();
+
+            // Current point
+            const px = cx + x * scale/3;
+            const py = cy - v * scale/3;
+            phaseCtx.fillStyle = '#ff6347';
+            phaseCtx.beginPath();
+            phaseCtx.arc(px, py, 8, 0, 2 * Math.PI);
+            phaseCtx.fill();
+            phaseCtx.strokeStyle = '#fff';
+            phaseCtx.lineWidth = 2;
+            phaseCtx.stroke();
+
+            // Display values
+            phaseCtx.fillStyle = '#333';
+            phaseCtx.font = 'bold 14px Arial';
+            phaseCtx.fillText(`x = ${x.toFixed(2)} m`, 10, h - 45);
+            phaseCtx.fillText(`v = ${v.toFixed(2)} m/s`, 10, h - 25);
+        }
+
+        function drawAnimation() {
+            const w = animCanvas.width;
+            const h = animCanvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const scale = 80;
+
+            animCtx.clearRect(0, 0, w, h);
+
+            // Title
+            animCtx.fillStyle = '#333';
+            animCtx.font = 'bold 18px Arial';
+            animCtx.fillText('Oscillator Animation', cx - 100, 30);
+
+            // Track
+            animCtx.strokeStyle = '#ccc';
+            animCtx.lineWidth = 2;
+            animCtx.beginPath();
+            animCtx.moveTo(cx - A * scale - 20, cy);
+            animCtx.lineTo(cx + A * scale + 20, cy);
+            animCtx.stroke();
+
+            // Amplitude markers
+            animCtx.fillStyle = '#999';
+            animCtx.fillRect(cx - A * scale, cy - 2, 4, 4);
+            animCtx.fillRect(cx + A * scale, cy - 2, 4, 4);
+            animCtx.font = '12px Arial';
+            animCtx.fillText('-A', cx - A * scale - 10, cy + 20);
+            animCtx.fillText('+A', cx + A * scale - 10, cy + 20);
+
+            // Current position
+            const x = A * Math.sin(omega * t + phi0);
+            const v = omega * A * Math.cos(omega * t + phi0);
+            const mass_x = cx + x * scale;
+
+            // Mass
+            const radius = 30;
+            animCtx.fillStyle = '#667eea';
+            animCtx.beginPath();
+            animCtx.arc(mass_x, cy, radius, 0, 2 * Math.PI);
+            animCtx.fill();
+            animCtx.strokeStyle = '#fff';
+            animCtx.lineWidth = 3;
+            animCtx.stroke();
+
+            // Spring (left side)
+            animCtx.strokeStyle = '#ff6347';
+            animCtx.lineWidth = 2;
+            const springStart = 50;
+            const springEnd = mass_x - radius;
+            const springSegments = 20;
+            const springWidth = 15;
+            animCtx.beginPath();
+            animCtx.moveTo(springStart, cy);
+            for (let i = 0; i <= springSegments; i++) {
+                const segX = springStart + (springEnd - springStart) * i / springSegments;
+                const segY = cy + (i % 2 === 0 ? springWidth : -springWidth);
+                animCtx.lineTo(segX, segY);
+            }
+            animCtx.lineTo(springEnd, cy);
+            animCtx.stroke();
+
+            // Velocity vector
+            const vScale = 1.5;
+            animCtx.strokeStyle = '#2196F3';
+            animCtx.lineWidth = 3;
+            animCtx.beginPath();
+            animCtx.moveTo(mass_x, cy);
+            animCtx.lineTo(mass_x + v * vScale * scale, cy);
+            animCtx.stroke();
+            
+            // Arrow head
+            const arrowSize = 10;
+            const arrowDir = v > 0 ? 1 : -1;
+            animCtx.beginPath();
+            animCtx.moveTo(mass_x + v * vScale * scale, cy);
+            animCtx.lineTo(mass_x + v * vScale * scale - arrowDir * arrowSize, cy - arrowSize/2);
+            animCtx.lineTo(mass_x + v * vScale * scale - arrowDir * arrowSize, cy + arrowSize/2);
+            animCtx.closePath();
+            animCtx.fill();
+
+            // Graphs below
+            const graphY = 350;
+            const graphHeight = 100;
+            
+            // Position graph
+            animCtx.strokeStyle = '#667eea';
+            animCtx.lineWidth = 2;
+            animCtx.beginPath();
+            for (let i = 0; i < w; i++) {
+                const time = t - (w - i) * 0.02;
+                const pos = A * Math.sin(omega * time + phi0);
+                const y = graphY + graphHeight/2 - pos * 20;
+                if (i === 0) animCtx.moveTo(i, y);
+                else animCtx.lineTo(i, y);
+            }
+            animCtx.stroke();
+
+            // Velocity graph
+            animCtx.strokeStyle = '#2196F3';
+            animCtx.beginPath();
+            for (let i = 0; i < w; i++) {
+                const time = t - (w - i) * 0.02;
+                const vel = omega * A * Math.cos(omega * time + phi0);
+                const y = graphY + graphHeight/2 - vel * 10;
+                if (i === 0) animCtx.moveTo(i, y);
+                else animCtx.lineTo(i, y);
+            }
+            animCtx.stroke();
+
+            // Legend
+            animCtx.fillStyle = '#667eea';
+            animCtx.fillRect(20, graphY - 30, 15, 3);
+            animCtx.fillStyle = '#333';
+            animCtx.font = '12px Arial';
+            animCtx.fillText('Position', 40, graphY - 25);
+            
+            animCtx.fillStyle = '#2196F3';
+            animCtx.fillRect(130, graphY - 30, 15, 3);
+            animCtx.fillStyle = '#333';
+            animCtx.fillText('Velocity', 150, graphY - 25);
+        }
+
+        function animate() {
+            if (isPlaying) {
+                t += 0.02;
+            }
+            
+            drawPhaseSpace();
+            drawAnimation();
+            
+            requestAnimationFrame(animate);
+        }
+
+        updateAxisStatus();
+        animate();
+    </script>
+</body>
+</html>
